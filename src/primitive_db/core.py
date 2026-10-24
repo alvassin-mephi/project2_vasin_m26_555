@@ -1,18 +1,21 @@
 from primitive_db import constants
-
-
-class TableAlreadyExistsError(Exception):
-    """Indicate that a table with the given name already exists"""
-
-
-class TableNotFoundError(Exception):
-    """Indicate that a table with the given name does not exist"""
+from primitive_db.decorators import confirm_action, handle_db_errors, log_time
 
 
 def _parse_columns(columns):
-    """Parse column definitions and prepend the integer ID column"""
+    """Parse column definitions and prepend the integer ID column
+
+    Examples:
+        ['name:str', 'age:int'] -> {'ID': 'int', 'name': 'str', 'age': 'int'}
+        ['name:str', 'ID:int'] -> {'ID': 'int', 'name': 'str'}
+        ['age:float'] -> ValueError (unsupported type)
+    """
     if not columns:
-        raise ValueError("столбцы не указаны")
+        raise ValueError(
+            constants.INVALID_VALUE_MESSAGE.format(
+                value=constants.MISSING_COLUMNS_MESSAGE
+            )
+        )
 
     parsed_columns = {}
 
@@ -29,7 +32,7 @@ def _parse_columns(columns):
                 and column_type != constants.ID_COLUMN_TYPE
             )
         ):
-            raise ValueError(column)
+            raise ValueError(constants.INVALID_VALUE_MESSAGE.format(value=column))
 
         parsed_columns[column_name] = column_type
 
@@ -41,26 +44,33 @@ def validate_table_name(table_name):
     if not table_name or not table_name.isascii() or not all(
         character.isalnum() or character == "_" for character in table_name
     ):
-        raise ValueError(table_name)
+        raise ValueError(constants.INVALID_VALUE_MESSAGE.format(value=table_name))
 
 
+@handle_db_errors
 def create_table(metadata, table_name, columns):
     """Create a table and return updated metadata"""
     validate_table_name(table_name=table_name)
 
     if table_name in metadata:
-        raise TableAlreadyExistsError(table_name)
+        raise ValueError(
+            constants.TABLE_ALREADY_EXISTS_MESSAGE.format(table_name=table_name)
+        )
 
     metadata[table_name] = _parse_columns(columns=columns)
     return metadata
 
 
+@handle_db_errors
+@confirm_action(action_name=constants.DROP_TABLE_ACTION)
 def drop_table(metadata, table_name):
     """Drop a table and return updated metadata"""
     validate_table_name(table_name=table_name)
 
     if table_name not in metadata:
-        raise TableNotFoundError(table_name)
+        raise ValueError(
+            constants.TABLE_NOT_FOUND_MESSAGE.format(table_name=table_name)
+        )
 
     del metadata[table_name]
     return metadata
@@ -68,14 +78,19 @@ def drop_table(metadata, table_name):
 
 def validate_value(value, column_type):
     """Raise ValueError if a value does not match its declared type"""
+    # bool is a subclass of int, so isinstance(True, int) would not work here
     if type(value) is not constants.VALID_TYPES[column_type]:
-        raise ValueError(value)
+        raise ValueError(constants.INVALID_VALUE_MESSAGE.format(value=value))
 
 
+@handle_db_errors
+@log_time
 def insert(metadata, table_name, table_data, values):
     """Insert typed values and return updated table data"""
     if table_name not in metadata:
-        raise TableNotFoundError(table_name)
+        raise ValueError(
+            constants.TABLE_NOT_FOUND_MESSAGE.format(table_name=table_name)
+        )
 
     columns = {
         name: column_type
@@ -84,7 +99,7 @@ def insert(metadata, table_name, table_data, values):
     }
 
     if len(values) != len(columns):
-        raise ValueError(values)
+        raise ValueError(constants.INVALID_VALUE_MESSAGE.format(value=values))
 
     for column_type, value in zip(columns.values(), values):
         validate_value(value=value, column_type=column_type)
@@ -105,8 +120,8 @@ def _matches_where(record, where_clause):
     )
 
 
-def select(table_data, where_clause=None):
-    """Return all records or only those matching the conditions"""
+def filter_records(table_data, where_clause=None):
+    """Return matching records without logging or changing the data"""
     if where_clause is None:
         return table_data
 
@@ -116,6 +131,14 @@ def select(table_data, where_clause=None):
     ]
 
 
+@handle_db_errors
+@log_time
+def select(table_data, where_clause=None):
+    """Return all records or only those matching the conditions"""
+    return filter_records(table_data=table_data, where_clause=where_clause)
+
+
+@handle_db_errors
 def update(table_data, set_clause, where_clause):
     """Return updated records without changing the original table data"""
     updated_data = []
@@ -131,6 +154,8 @@ def update(table_data, set_clause, where_clause):
     return updated_data
 
 
+@handle_db_errors
+@confirm_action(action_name=constants.DELETE_RECORDS_ACTION)
 def delete(table_data, where_clause):
     """Return table data without records matching the conditions"""
     return [

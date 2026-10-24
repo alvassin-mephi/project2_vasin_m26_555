@@ -4,7 +4,7 @@
 
 ## Установка и запуск
 
-Требуются Python >= 3.12 и uv, ruff для разработки.
+Требуются Python >= 3.12 и uv, для разработки также необходим ruff.
 
 ```bash
 git clone https://github.com/alvassin-mephi/project2_vasin_m26_555.git
@@ -13,7 +13,7 @@ uv sync
 uv run database
 ```
 
-Другие варианты запуска из корня проекта:
+Другие варианты запуска:
 
 ```bash
 uv run project
@@ -31,8 +31,6 @@ uv run ruff check .
 uv build
 uvx twine check dist/*
 ```
-
-Собранные пакеты появятся в `dist/`. Проверка через `twine` не публикует их в PyPI.
 
 ## Установка готового приложения
 
@@ -68,10 +66,11 @@ database
 create_table users name:str age:int is_active:bool
 list_tables
 drop_table users
+y
 exit
 ```
 
-Демонстрация: https://asciinema.org/a/7GrmNiKHzNCNw3BI
+[![Демонстрация управления таблицами](https://asciinema.org/a/7GrmNiKHzNCNw3BI.svg)](https://asciinema.org/a/7GrmNiKHzNCNw3BI)
 
 Схемы таблиц сохраняются в `db_meta.json` в текущем рабочем каталоге.
 
@@ -91,4 +90,15 @@ exit
 Строковые значения указываются в кавычках. При вставке обязательны все поля, кроме автоматически создаваемого `ID`.
 Строки таблиц сохраняются в `data/<имя_таблицы>.json` в текущем рабочем каталоге и доступны после перезапуска приложения.
 
-Демонстрация: https://asciinema.org/a/FCnInEjFfHerWVET
+[![Демонстрация CRUD-операций](https://asciinema.org/a/FCnInEjFfHerWVET.svg)](https://asciinema.org/a/FCnInEjFfHerWVET)
+
+## Декораторы и кэш
+
+- Ошибки ввода и операций с базой выводятся сообщениями, после которых можно ввести следующую команду.
+- `drop_table` и `delete` запрашивают подтверждение: только `y` разрешает удаление, любой другой ответ, включая Enter, отменяет его.
+- Успешные вызовы `insert` и `select` выводят время выполнения с точностью до трёх знаков после запятой.
+- Результаты `select` кэшируются по имени таблицы и условию `where` в пределах одного запуска. Повторный запрос использует кэш и не выводит время выполнения `select`.
+
+Кэш сбрасывается после успешных `create_table`, `insert`, `update`, `delete` и `drop_table`.
+
+[![Демонстрация CRUD, декораторов и кэша](https://asciinema.org/a/iXufOC1r5nInONky.svg)](https://asciinema.org/a/iXufOC1r5nInONky)
