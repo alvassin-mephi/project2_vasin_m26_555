@@ -4,7 +4,7 @@ from primitive_db.engine import run
 
 
 def main():
-    """Run the application."""
+    """Run the application"""
     run()
 
 

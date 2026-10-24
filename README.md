@@ -4,7 +4,7 @@
 
 ## Установка и запуск
 
-Требуются Python >= 3.12 и uv.
+Требуются Python >= 3.12 и uv, ruff для разработки.
 
 ```bash
 git clone https://github.com/alvassin-mephi/project2_vasin_m26_555.git
@@ -12,6 +12,42 @@ cd project2_vasin_m26_555
 uv sync
 uv run database
 ```
+
+Другие варианты запуска из корня проекта:
+
+```bash
+uv run project
+uv run python -m primitive_db.main
+```
+
+Все три команды запускают одно приложение. Ручная активация `.venv` не требуется.
+
+## Проверка и сборка
+
+Выполните из корня проекта:
+
+```bash
+uv run ruff check .
+uv build
+uvx twine check dist/*
+```
+
+Собранные пакеты появятся в `dist/`. Проверка через `twine` не публикует их в PyPI.
+
+## Установка готового приложения
+
+После сборки можно установить пакет как отдельный инструмент:
+
+```bash
+uv tool install --force dist/primitive_db-0.1.0-py3-none-any.whl
+database
+```
+
+Если команда не найдена, выполните `uv tool update-shell` и откройте новый терминал.
+Для проверки установленного инструмента используйте терминал без активной `.venv`.
+
+`uv run database` запускает текущий код проекта, а `uv tool install` устанавливает
+отдельную копию собранного пакета. Для её обновления повторите сборку и установку.
 
 ## Управление таблицами
 
@@ -35,7 +71,24 @@ drop_table users
 exit
 ```
 
+Демонстрация: https://asciinema.org/a/7GrmNiKHzNCNw3BI
+
 Схемы таблиц сохраняются в `db_meta.json` в текущем рабочем каталоге.
 
-## Демонстрация
-asciinema: https://asciinema.org/a/7GrmNiKHzNCNw3BI
+## CRUD-операции
+
+Примеры для созданной таблицы `users` со столбцами `name:str`, `age:int`, `is_active:bool`:
+
+| Команда | Описание |
+| --- | --- |
+| `insert into users values ("Sergei", 28, true)` | Добавить запись |
+| `select from users` | Показать все записи |
+| `select from users where age = 28` | Выбрать записи по условию |
+| `update users set age = 29 where name = "Sergei"` | Обновить подходящие записи |
+| `delete from users where ID = 1` | Удалить подходящие записи |
+| `info users` | Показать схему таблицы и количество записей |
+
+Строковые значения указываются в кавычках. При вставке обязательны все поля, кроме автоматически создаваемого `ID`.
+Строки таблиц сохраняются в `data/<имя_таблицы>.json` в текущем рабочем каталоге и доступны после перезапуска приложения.
+
+Демонстрация: https://asciinema.org/a/FCnInEjFfHerWVET
