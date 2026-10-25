@@ -21,7 +21,10 @@ def save_metadata(filepath, data):
 
 def load_table_data(table_name):
     """Load table records or return an empty list if the file is missing"""
-    filepath = os.path.join(constants.DATA_DIRECTORY, f"{table_name}.json")
+    filepath = os.path.join(
+        constants.DATA_DIRECTORY,
+        constants.TABLE_FILENAME_TEMPLATE.format(table_name=table_name),
+    )
 
     try:
         with open(filepath, mode="r") as fd:
@@ -33,7 +36,10 @@ def load_table_data(table_name):
 def save_table_data(table_name, data):
     """Save table records to a JSON file"""
     os.makedirs(constants.DATA_DIRECTORY, exist_ok=True)
-    filepath = os.path.join(constants.DATA_DIRECTORY, f"{table_name}.json")
+    filepath = os.path.join(
+        constants.DATA_DIRECTORY,
+        constants.TABLE_FILENAME_TEMPLATE.format(table_name=table_name),
+    )
 
     with open(filepath, mode="w") as fd:
         json.dump(data, fd)
@@ -41,7 +47,10 @@ def save_table_data(table_name, data):
 
 def delete_table_data(table_name):
     """Delete a table data file if it exists"""
-    filepath = os.path.join(constants.DATA_DIRECTORY, f"{table_name}.json")
+    filepath = os.path.join(
+        constants.DATA_DIRECTORY,
+        constants.TABLE_FILENAME_TEMPLATE.format(table_name=table_name),
+    )
 
     try:
         os.remove(filepath)
