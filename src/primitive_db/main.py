@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from primitive_db.engine import welcome
+from primitive_db.engine import run
 
 
 def main():
     """Run the application."""
-    welcome()
+    run()
 
 
 if __name__ == "__main__":
